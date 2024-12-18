@@ -15,3 +15,7 @@ class Config(SimpleNamespace):
             sub_config[key] = value
         return json.dumps(sub_config, indent=4, ensure_ascii=False)
 
+def load_config_from_json(json_path: str):
+    with open(json_path, 'r', encoding='utf-8') as file:
+        config_dict = json.load(file)
+    return Config(**config_dict)

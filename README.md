@@ -1,6 +1,6 @@
 # Steward Utils
 
-万能智能(Omni-Steward)管家工具包，包含各种实用工具，能够轻松扩展实现自己的工具
+全能管家(Omni-Steward)工具包，包含各种实用工具，能够轻松扩展实现自己的工具
 
 ## 安装
 
@@ -58,3 +58,5 @@ tool_names.append('steward_utils.tools.example.ListAllTools')
 from steward_utils.tools.example import ListAllTools # 导入工具
 tool_names.append('list_all_tools') # 添加到工具列表
 ```
+## 可用工具链接
+- [Omni-HA: 通过自然语言控制Home Assistant](https://github.com/OmniSteward/Omni-HA)

@@ -1,7 +1,6 @@
 import inspect
 import os
-from configs import Config
-import json
+from ..configs import Config
 import importlib
 
 current_os = os.name
