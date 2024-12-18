@@ -33,10 +33,10 @@ class JsonFixer:
             修复后的JSON字符串
         """
         if format_instructions is None:
-            format_instructions = "请修复以下JSON字符串的格式错误，确保它是有效的JSON格式。只返回修复后的JSON字符串，不要返回任何其他内容。"
+            format_instructions = "请修复以下JSON字符串的格式错误，确保它是有效的JSON格式。请直接返回修复后的JSON字符串，不要返回任何其他内容。"
             
         prompt = f"{format_instructions}\n\n{broken_json}"
-        for _ in range(self.retry_times):
+        for i in range(self.retry_times):
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -45,8 +45,11 @@ class JsonFixer:
                 ]
             )
             json_str = response.choices[0].message.content.strip()
+            if json_str.startswith("```json") and json_str.endswith("```"): # 有时候会脑抽，把json字符串包裹在```json```中
+                json_str = json_str[7:-3].strip()
             try:
                 return json.loads(json_str)
             except json.JSONDecodeError:
+                print(f"DEBUG - 修复失败: {json_str} 第{i+1}次尝试")
                 continue
         return None
