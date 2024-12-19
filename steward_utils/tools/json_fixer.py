@@ -1,25 +1,53 @@
 from openai import OpenAI
 from typing import Optional
 import json
+from ..configs import Config
+from .utils import get_fn_args
 
 class JsonFixer:
     """用于修复格式错误的JSON输出的工具类"""
+    _instance = None
     
-    def __init__(self, api_key: str, api_base: str, model: str, retry_times: int = 3):
+    def __new__(cls, config: Config = None, retry_times: int = 3):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+    
+    def __init__(self, config: Config = None, retry_times: int = 3):
         """
-        初始化JSON修复器
+        初始化JSON修复器（单例模式）
         
         Args:
-            api_key: OpenAI API密钥
-            api_base: OpenAI API基础URL
-            model: 要使用的模型名称
+            config: 配置对象，仅在第一次初始化时使用
+            retry_times: 重试次数，仅在第一次初始化时使用
         """
+        if self._initialized:
+            return
+            
+        if config is None:
+            raise ValueError("首次初始化时必须提供config参数")
+            
+        openai_key = config.get_with_fallback("json_fixer.openai_key", "openai_api_key")
+        openai_base = config.get_with_fallback("json_fixer.openai_base", "openai_api_base")
+        model = config.get_with_fallback("json_fixer.model", "model")
+
         self.client = OpenAI(
-            api_key=api_key,
-            base_url=api_base
+            api_key=openai_key,
+            base_url=openai_base
         )
         self.model = model
         self.retry_times = retry_times
+        self._initialized = True
+
+    def get_fn_args(self, fn_call: dict) -> dict|None:
+        """
+        解析函数调用参数，必要时使用LLM进行修复
+        """
+        args = get_fn_args(fn_call)
+        if args is None:
+            args = self.fix_json(fn_call['arguments'])
+        return args
 
     def fix_json(self, broken_json: str, format_instructions: Optional[str] = None) -> str:
         """
