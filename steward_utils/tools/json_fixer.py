@@ -3,6 +3,7 @@ from typing import Optional
 import json
 from ..configs import Config
 from .utils import get_fn_args
+import json_repair
 
 class JsonFixer:
     """用于修复格式错误的JSON输出的工具类"""
@@ -43,10 +44,21 @@ class JsonFixer:
     def get_fn_args(self, fn_call: dict) -> dict|None:
         """
         解析函数调用参数，必要时使用LLM进行修复
+        1. 先尝试使用get_fn_args解析
+        2. 如果解析失败，则使用json_repair库进行修复
+        3. 如果解析失败，使用LLM进行修复
         """
         args = get_fn_args(fn_call)
         if args is None:
-            args = self.fix_json(fn_call['arguments'])
+            bad_json_str = str(fn_call['arguments'])
+            good_json_str = json_repair.repair_json(bad_json_str)
+            # If the string was super broken this will return an empty string
+            if len(good_json_str) > 0:
+                args = json.loads(good_json_str)
+            else:
+                args = None
+        if args is None:
+            args = self.fix_json_with_llm(fn_call['arguments'])
         return args
 
     def fix_json(self, broken_json: str, format_instructions: Optional[str] = None) -> str:
